@@ -4,6 +4,10 @@ import json
 
 
 def ukaz_data():
+    """
+    Vykresluje data
+    :return:
+    """
     setworldcoordinates(min(X), min(Y), max(X), max(Y))
     penup()
     hideturtle()
@@ -16,6 +20,11 @@ def ukaz_data():
 
 
 def vykresli_oblast(bound):
+    """
+    Vykresluje ctverce, respektive obdelniky podle charakteru dat
+    :param bound: boundary box
+    :return:
+    """
     tracer(0,0)
     hideturtle()
     penup()
@@ -33,7 +42,14 @@ def vykresli_oblast(bound):
     update()
 
 
-def body_v_oblasti(body, bound, oblast):
+def body_v_oblasti(body, bound, quad):
+    """
+    definuje body, ktere se nachazeji v danem bounding boxu
+    :param body: vstupni list s daty geojson
+    :param bound: bounding box
+    :param oblast:
+    :return:body v bounding boxu
+    """
     B = []
     for a in range(len(body)):
 
@@ -41,7 +57,7 @@ def body_v_oblasti(body, bound, oblast):
         x = body[a][1]
         y = body[a][2]
         ex_kod = body[a][3]
-        novy_kod = ex_kod + str(oblast)
+        novy_kod = ex_kod + str(quad)
         if bound[0] <= x <= bound[2] and bound[1] <= y <= bound[3]:
             B.append([ID, x, y, novy_kod])
         else:
@@ -49,6 +65,15 @@ def body_v_oblasti(body, bound, oblast):
     return B
 
 def quadtree(body_v, body_mimo, bound, quad=0, velikost = 10):
+    """
+    Vlastni quadtree
+    :param body_v: vstupni data
+    :param body_mimo: vystupni data + ID  bounding boxu, ve kterem se nachazi
+    :param bound: bounding box
+    :param quad: cislo bounding boxu
+    :param velikost: maximalni pocet clenu skupiny
+    :return: vysledne body
+    """
     if len(body_v) <= velikost:  # ukonceni rekurze
         vykresli_oblast(bound)
         for point in body_v:
@@ -76,17 +101,17 @@ def quadtree(body_v, body_mimo, bound, quad=0, velikost = 10):
 X = []
 Y = []
 body = []
-numclen = int(input("Zadejte pozadovany pocet clenu ve skupine"))
-with open('export.geojson') as f:
+numclen = int(input("Zadejte pozadovany pocet clenu ve skupine")) # definice velikosti skupiny
+with open('export.geojson') as f: # nahrani souboru geojson
     data = json.load(f)
-for i, feature in enumerate(data['features']):
+for i, feature in enumerate(data['features']): # vytvoreni vstupnich seznamu
     X.append(feature['geometry']['coordinates'][0])
     Y.append(feature['geometry']['coordinates'][1])
     features = feature['geometry']['coordinates']
     body.append([i, features[0], features[1], ""])
-bound=[min(X), max(X), min(Y), max(Y)]
+bound=[min(X), max(X), min(Y), max(Y)] # vytvoreni zakladniho boundin boxu
 ukaz_data()
-body_mimo = []
+body_mimo = [] # vytvoreni seznamu pro vysledne body
 body_mimo = quadtree(body, body_mimo, bound, velikost = numclen)
 ID_body_mimo = (sorted(body_mimo,key=itemgetter(0)))
 
@@ -94,7 +119,7 @@ for i, value in enumerate(data['features']):
     value['properties']['cluster_id'] = ID_body_mimo[3]
 
 
-with open('import.geojson', 'w') as out:  #ulozeni vystupniho souboru
+with open('import.geojson', 'w') as out:  #ulozeni vystupniho souboru jako import.geojson
     json.dump(data, out)
 
 
